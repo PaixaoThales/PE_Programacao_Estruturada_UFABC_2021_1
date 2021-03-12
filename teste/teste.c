@@ -1,25 +1,24 @@
 #include <stdio.h>
 
 void main(){
-    int num[6];
-    int cont = 0, a = 0;
-    for(int i = 0; i < 6; i++){
-        scanf("%d", &num[i]);
-    }
-    for(int p = 0; p < 6; p++){
-        cont = 0;
-        for(int x = 0; x < p; x++){
-          if(num[p] == num[x]){
-              cont += 1;
-          }
+    int num[10], a = 0, b = 0;
+
+    for(int i = 0; i < 10; i++){
+        scanf("%d", &b);
+        a = 0;
+        for(int j = 0; j < i; j++){
+            if(b == num[j]){
+                a = a + 1;
+                printf("Numero já digitado! Digite outro numero!\n");
+                i = i - 1;
+                break;
+            }
         }
-        if(cont > 0 && cont < 2){
-            printf("%d\n", num[p]);
-        }else{
-            a += 1;
+        if(a == 0){
+            num[i] = b;
         }
     }
-    if(a == 6){
-        printf("Nao existem valores iguais!");
+    for(int i = 0; i < 10; i++){
+        printf("%d\n", num[i]);
     }
 }
