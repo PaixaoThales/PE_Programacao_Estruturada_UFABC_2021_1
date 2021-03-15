@@ -1,8 +1,5 @@
 #ifndef MATRIZ
 #define MATRIZ
-#define MAX_COLS 15
-#define MAX_ROWS 15
-
 #include <stdio.h>
 
 typedef struct {
@@ -12,9 +9,14 @@ typedef struct {
 } Matriz;
 
 
-static float** buildMatriz(void);
-static void loadMatriz(FILE *file, Matriz *m);
+void kill(const char* erro);
+static void allocMatriz(Matriz* m);
+static void loadMatriz(Matriz *m, FILE *file);
 Matriz prepMatriz(char*);
+matriz copiarMatriz(Matriz* src);
+Matriz criarMatrizDeMesmoTamanho(Matriz* src);
+Matriz criarMatrizDeTamanho(int rows,int cols);
+Matriz criarMatrizIdentidade(int n);
 void clearMatriz(Matriz *m);
 int  eqMatriz(Matriz*,Matriz*);
 void printMatriz(Matriz *m);

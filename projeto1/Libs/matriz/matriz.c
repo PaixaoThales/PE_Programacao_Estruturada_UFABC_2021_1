@@ -5,44 +5,143 @@
 #include "./matriz.h"
 
 
-static float** buildMatriz() {
-    float** matriz;
-    matriz = (float**)malloc(MAX_ROWS * sizeof(float));
-    for (int i = 0; i < MAX_ROWS; ++i) {
-        matriz[i] = (float*)malloc(MAX_COLS * sizeof(float));
-    }
-    return matriz;
+
+void kill(const char* erro)
+{
+    printf("%s", erro); 
+    exit(0);
 }
 
 
-static void loadMatriz(FILE* arq, Matriz *m) {
+static void allocMatriz(Matriz* m) {
+    m->matriz = (float**)malloc(m->rows * sizeof(float));
+    for (int i = 0; i < m->rows; ++i) {
+        m->matriz[i] = (float*)malloc(m->cols * sizeof(float));
+    }
+}
+
+
+static void loadMatriz(Matriz* m, FILE* arq) {
     int i = 0;
     char* token;
-    char line[1024];
+    char line[4096];
+    int prevJ = -1;
     while (fgets(line, sizeof(line), arq)) {
         int j = 0;
-        for (token = strtok(line, ";"); token && *token; j++, token = strtok(NULL, ";")) {
-            (*m).matriz[i][j] = atof(token);
+        for (token = strtok(line, ";"); token && *token; token = strtok(NULL, ";")) {
+            j++;
         }
-        m->cols = j;
+        if (prevJ == -1) prevJ = j;
+        else if (prevJ != j) kill("Erro: Matriz mal formada");
         i++;
     }
     m->rows = i;
+    m->cols = prevJ;
+    allocMatriz(m);
+    rewind(arq);
+    i = 0;
+    while (fgets(line, sizeof(line), arq)) {
+        int j = 0;
+        for (token = strtok(line, ";"); token && *token; token = strtok(NULL, ";")) {
+            m->matriz[i][j] = atof(token);
+            j++;
+        }
+        i++;
+    }
     fclose(arq);
 }
 
 Matriz prepMatriz(char *filePath){
-    Matriz m; m.matriz = buildMatriz();
+    Matriz m ;
     FILE *file = getArquivo(filePath);
-    loadMatriz(file,&m);
+    loadMatriz(&m,file);
     return m;
 }
 
+Matriz copiarMatriz(Matriz* src)
+{
+    Matriz dest;
+    dest.rows = src->rows;
+    dest.cols = src->cols;
+    allocMatriz(&dest);
+    for (int i = 0; i < dest.rows; i++)
+    {
+        for (int j = 0; j < dest.cols; j++) 
+        {
+            float v = src->matriz[i][j];
+            dest.matriz[i][j] = v;
+        }
+    }
+    return dest;
+}
+
+Matriz criarMatrizDeMesmoTamanho(Matriz* src)
+{
+    Matriz dest;
+    dest.rows = src->rows;
+    dest.cols = src->cols;
+    allocMatriz(&dest);
+    return dest;
+}
+
+Matriz criarMatrizDeTamanho(int rows, int cols)
+{
+    Matriz dest;
+    dest.rows = rows;
+    dest.cols = cols;
+    allocMatriz(&dest);
+    return dest;
+}
+
+
+Matriz criarMatrizIdentidade(int n)
+{
+    Matriz dest = criarMatrizDeTamanho(n, n);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (i == j) dest.matriz[i][j] = 1;
+            else dest.matriz[i][j] = 0;
+        }
+    }
+    return dest;
+}
+
+
 void clearMatriz(Matriz *m){
-    for( int i = 0 ; i < MAX_COLS ; i++){
+    for( int i = 0 ; i < m->cols ; i++){
         free(m->matriz[i]);
     }
     free(m->matriz);
+}
+
+static void reduzirMatriz(Matriz* m, int a, int b, float fator) {
+    if (m->rows < a || m->rows < b) kill("Erro: Numero de colunas eh menor do que os parametros passados.\n");
+
+    for (int i = 0; i < m->cols; i++)
+    {
+        m->matriz[b][i] -= m->matriz[a][i] * fator;
+    }
+}
+
+static void trocarLinhas(Matriz* m, int l1, int l2)
+{
+    if (m->rows <= l1 || m->rows <= l2) kill("Erro: Numero da linha é maior do que a quantidade de linhas da matriz");
+    for (int i = 0; i < m->rows; i++) {
+        float temp = m->matriz[l1][i];
+        m->matriz[l1][i] = m->matriz[l2][i];
+        m->matriz[l2][i] = temp;
+    }
+}
+
+static void multLinha(Matriz* m, int l, float val)
+{
+    if (m->rows <= l) kill("Erro: Numero da linha é maior do que a quantidade de linhas da matriz");
+    for (int i = 0; i < m->rows; i++)
+    {
+        m->matriz[l][i] *= val;
+    }
 }
 
 int eqMatriz(Matriz *m1,Matriz *m2){
@@ -122,6 +221,54 @@ void multMatrizes(Matriz *m1, Matriz *m2, Matriz *res){
     
 }
 
+Matriz inversaMatriz(Matriz* m) {
+    if ((m)->cols != (m)->rows) kill("Erro: A matriz nao eh quadrada\n");
+    Matriz copia = copiarMatriz(m);
+    Matriz inversa = criarMatrizIdentidade(m->rows);
+    for (int i = 0; i < copia.rows; i++)
+    {
+        for (int j = i + 1; j < copia.rows; j++)
+        {
+            if (copia.matriz[i][i] == 0) {
+                for (int l = i + 1; l < copia.rows; l++)
+                {
+                    if (copia.matriz[l][l] != 0)
+                    {
+                        trocarLinhas(&copia, i, l);
+                        break;
+                    }
+                }
+                continue;
+            }
+            float fator = copia.matriz[j][i] / copia.matriz[i][i];
+            reduzirMatriz(&inversa, i, j, fator);
+            reduzirMatriz(&copia, i, j, fator);
+        }
+    }
+
+    for (int i = copia.rows - 1; i > 0; i--)
+    {
+        for (int j = i - 1; j >= 0; j--)
+        {
+            if (copia.matriz[i][i] == 0) continue;
+            if (j == -1) break;
+            float fator = copia.matriz[j][i] / copia.matriz[i][i];
+            reduzirMatriz(&inversa, i, j, fator);
+            reduzirMatriz(&copia, i, j, fator);
+        }
+    }
+
+    for (int i = 0; i < copia.rows; i++) {
+        if (copia.matriz[i][i] == 0) continue;
+        float fator = 1 / copia.matriz[i][i];
+        multLinha(&inversa, i, fator);
+        multLinha(&copia, i, fator);
+    }
+
+    clearMatriz(&copia);
+    return inversa;
+}
+
 // Algoritmo para matrizes NxN / N<=2.
 float detMatriz(Matriz m){
     if( m.cols == 1 ){ return m.matriz[0][0]; }
@@ -151,8 +298,7 @@ float detMatrizLaplace(Matriz m){
         float detM = 0.0F;
         for( int k = 0; k < m.cols ; k++){
             Matriz submatriz;
-            submatriz.cols = m.cols -1 ; submatriz.rows = m.rows -1;
-            submatriz.matriz = buildMatriz();
+            submatriz = criarMatrizDeTamanho( m.rows -1,m.cols -1);
             int iaux = 0;
             int jaux = 0;
             if( m.matriz[1][k] != 0 ){
