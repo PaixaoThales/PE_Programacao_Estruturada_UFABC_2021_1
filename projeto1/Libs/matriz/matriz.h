@@ -2,6 +2,7 @@
 #define MATRIZ
 #include <stdio.h>
 
+
 typedef struct {
     int rows;
     int cols;
@@ -13,19 +14,18 @@ void kill(const char* erro);
 static void allocMatriz(Matriz* m);
 static void loadMatriz(Matriz *m, FILE *file);
 Matriz prepMatriz(char*);
-matriz copiarMatriz(Matriz* src);
+Matriz copiarMatriz(Matriz* src);
 Matriz criarMatrizDeMesmoTamanho(Matriz* src);
 Matriz criarMatrizDeTamanho(int rows,int cols);
 Matriz criarMatrizIdentidade(int n);
 void clearMatriz(Matriz *m);
 int  eqMatriz(Matriz*,Matriz*);
 void printMatriz(Matriz *m);
-void opEscalarMatriz(Matriz *m, float *num, char op);
-void sumMatrizes(Matriz *m1, Matriz *m2, Matriz *res);
-void subtrMatrizes(Matriz *m1, Matriz *m2, Matriz *res);
-void multMatrizes(Matriz *m1, Matriz *m2, Matriz *res);
-float detMatriz(Matriz m);
-float detMatrizSarrus(Matriz m);
+Matriz opEscalarMatriz(Matriz *m, float num, char op);
+Matriz sumMatrizes(Matriz m1, Matriz m2);
+Matriz subtrMatrizes(Matriz m1, Matriz m2);
+Matriz multMatrizes(Matriz m1, Matriz m2);
+Matriz inversaMatriz(Matriz *m1);
 float detMatrizLaplace(Matriz m);
 
 #include "matriz.c"
