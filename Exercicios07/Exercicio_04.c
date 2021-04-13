@@ -18,13 +18,13 @@ int main(int argc, char const *argv[]){
     } 
     scanf(" %c", &letra);
     trocaLetras(letra, ptrTexto);
-    while(*ptrTexto != '\0'){
+    /*while(*ptrTexto != '\0'){
         putchar(*ptrTexto++);
-    }
-    /*
+    }*/
+    
     for(int i = 0; i < TAM; i++){
         printf("%c",*(ptrTexto + i));
     }
-    */ 
+    
     return 0;
 }
